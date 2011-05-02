@@ -20,6 +20,11 @@
 		</style>
 	</head>
 	<body>
+		<script type="text/javascript">
+			if (typeof(Float32Array) == 'undefined') {
+				alert('WebGL을 지원하지 않는 브라우저입니다. 파이어폭스 4를 설치하세요.');
+			}
+		</script>
 		<script type="text/javascript" src="scripts/three.js"></script>
 		<script type="text/javascript" src="scripts/lexer.js"></script>
 		<script type="text/javascript" src="scripts/ll.js"></script>
