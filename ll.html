@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=UTF-8" />
+		<title>LL 분석기</title>
+		<style type="text/css">
+			body { font-size: 18px; }
+
+			#top, #right, #bottom, #error_g { background-color: rgba(220, 220, 220, 0.5); padding: 5px; }
+
+			#top { position: absolute; top: 10px; }
+			#right { position: absolute; right: 10px; }
+			#bottom { position: absolute; bottom: 10px; }
+			#error_g { position: absolute; left: 50px; top: 100px; color: red; font-size: 30px; padding: 10px; visibility: hidden; }
+
+			#upload_wrapper { display: inline; }
+			#upload { margin-left: -145px; opacity: 0; width: 145px; }
+
+			textarea { font-size: 12px; }
+		</style>
+	</head>
+	<body>
+		<script type="text/javascript" src="scripts/three.js"></script>
+		<script type="text/javascript" src="scripts/lexer.js"></script>
+		<script type="text/javascript" src="scripts/ll.js"></script>
+		<script type="text/javascript" src="scripts/draw.js"></script>
+
+		<div id="top">
+			분석할 파일을 <div id="upload_wrapper">
+				<a href="#" id="upload_a">선택</a>
+				<input type="file" id="upload"></input>
+			</div>하거나, 끌어다 놓거나, 직접 문장을 수정하세요.
+		</div>
+
+		<div id="right">
+			<input type="button" value="시점 원래대로" onclick="draw_revert_camera(); return false;" />
+			<p>문장 목록:</p>
+			<div id="stces">
+			</div>
+			<p>문법:</p>
+			<div id="rules">
+				<textarea id="text" style="width: 200px; height: 100px;"></textarea><br />
+				<input type="button" value="적용" onclick="on_apply_rules(); return false;" />
+			</div>
+			<p>토큰 정보:</p>
+			<div id="tok_info">
+			</div>
+		</div>
+
+		<div id="bottom">
+			마우스 왼쪽 버튼으로 끌거나, 휠로 확대 축소를 하거나, 트리 노드를 클릭하거나, 키보드 화살표 키를 누르면 시점이 바뀝니다.
+		</div>
+
+		<div id="error_g">&nbsp;</div>
+
+		<script type="text/javascript">
+			var tok_info = document.getElementById('tok_info');
+			var error_g = document.getElementById('error_g');
+
+			if (String.prototype.strip === undefined) {
+				String.prototype.strip = function() {
+					return String(this).replace(/^\s+|\s+$/g, '');
+				};
+			}
+
+			function display_error(text) {
+				if (text) {
+					error_g.childNodes[0].nodeValue = text;
+					error_g.style.visibility = 'visible';
+				} else {
+					error_g.style.visibility = 'hidden';
+				}
+			}
+
+			function handle_files(files) {
+				if (!files.length) {
+					alert('파일을 선택하세요.');
+					return;
+				}
+
+				var reader = new FileReader();
+				reader.onprogress = on_reader;
+				reader.onloadend = on_reader_end;
+
+				reader.readAsText(files[0]);
+			}
+
+			function on_reader(ev) { }
+
+			function on_reader_end(ev) {
+				if (ev.target.error) {
+					display_error('파일을 읽을 권한이 없습니다. 파이어폭스로 실행하거나, 서버에 HTML 파일을 올리세요.');
+					return;
+				}
+
+				handle_text(ev.target.result);
+			}
+
+			function handle_text(text) {
+				var lines = text.split('\n');
+
+				var i = 0;
+				while (i < lines.length) {
+					if (i+1 < lines.length && lines[i+1][0] == '\t') {
+						lines[i] += lines[i+1].strip();
+						lines.splice(i+1, 1);
+					} else i++;
+				}
+
+				if (!lines.length) {
+					display_error('내용이 없습니다.');
+					return;
+				}
+
+				var stces = document.getElementById('stces');
+				stces.innerHTML = '';
+				for (var i=0;i<lines.length;i++) {
+					var line = lines[i].strip();
+					if (!line) continue;
+
+					var div = document.createElement('div');
+
+					var radio = document.createElement('input');
+					radio.type = 'radio';
+					radio.name = 'stces';
+					radio.value = line;
+
+					radio.onmouseup = function(ev) {
+						handle_line(this.value);
+					};
+
+					div.appendChild(radio);
+
+					var input = document.createElement('input');
+					input.value = line;
+
+					input.onmouseup = function(ev) {
+						var line = this.value;
+						var radio = this.previousSibling;
+
+						if (radio.checked == 'checked') return;
+
+						radio.value = line;
+						radio.checked = 'checked';
+
+						handle_line(line);
+					};
+
+					input.onkeyup = function(obj) {
+						var timer_id = -1;
+						return function(ev) {
+							if (timer_id != -1) clearTimeout(timer_id);
+							timer_id = setTimeout(function() {
+								obj.onmouseup();
+							}, 1000);
+						};
+					}(input);
+
+					div.appendChild(input);
+
+					stces.appendChild(div);
+				}
+
+				handle_line(lines[0]);
+				stces.childNodes[0].childNodes[0].checked = 'checked';
+			}
+
+			function handle_line(line) {
+				draw_reset();
+
+				var toks = [];
+
+				var handle = lexer_open(line);
+				var tok = null;
+				while ((tok = lexer_get_next_tok(handle))) {
+					if (tok.type == 'eof') break;
+					toks.push(tok);
+				}
+
+				if (!tok) {
+					display_error('어휘 분석에 실패했습니다.');
+					return;
+				}
+
+				var tree;
+				if (!(tree = ll_parse(toks))) {
+					display_error('문법 분석에 실패했습니다.');
+					return;
+				}
+
+				draw_tree(tree);
+
+				display_error(null);
+			}
+
+			function on_mouse_up(ev) {
+				if (mouse_moved) return;
+
+				if (cur_obj) {
+					if (cur_obj.tok) {
+						var tok = cur_obj.tok;
+
+						var data = '';
+						for (var x in tok) data += x+': '+tok[x]+'<br>';
+						tok_info.innerHTML = data;
+					}
+				}
+			}
+
+			function on_apply_rules() {
+				var rules = document.getElementById('text').value;
+				if (!ll_create_table(rules)) {
+					display_error('LL 테이블을 생성하지 못했습니다.');
+					return;
+				}
+
+				handle_text(default_text);
+			}
+
+//			var default_rules = "E -> T E'\nE' -> + T E' | nil\nT -> F T'\nT' -> * F T' | nil\nF -> ( E ) | id";
+			var default_rules = "E -> T E'\nE' -> + T E'\nE' -> - T E'\nE' -> nil\nT -> F T'\nT' -> * F T'\nT' -> / F T'\nT' -> nil\nF -> ( E )\nF -> id\nF -> num";
+			var default_text = 'abc+123+456\n1+1\na+b+c+1+2+3+d+e+f+4+5+6';
+
+			function on_load() {
+				document.getElementById('text').value = default_rules;
+
+				if (!ll_create_table(default_rules)) {
+					display_error('LL 테이블을 생성하지 못했습니다.');
+					return;
+				}
+
+				document.getElementById('upload').addEventListener('change', function(ev) { ev.preventDefault(); handle_files(ev.target.files); }, false);
+				document.getElementById('upload_a').addEventListener('click', function(ev) { ev.preventDefault(); document.getElementById('upload').click(); }, false);
+
+				var dropbox = window;
+				dropbox.addEventListener('dragenter', function (ev) { ev.stopPropagation(); ev.preventDefault(); }, false);
+				dropbox.addEventListener('dragover', function (ev) { ev.stopPropagation(); ev.preventDefault(); }, false);
+				dropbox.addEventListener('drop', function (ev) { ev.stopPropagation(); ev.preventDefault(); handle_files(ev.dataTransfer.files); }, false);
+
+				window.addEventListener('mouseup', on_mouse_up, false);
+
+				handle_text(default_text);
+			}
+
+			on_load();
+		</script>
+	</body>
+</html>
