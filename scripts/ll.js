@@ -254,7 +254,7 @@ function ll_parse(toks) {
 
 		if (stack_top == next_inp.type) {
 			cur_node.tok = next_inp;
-			if (cur_node.type == 'num') cur_node.name = cur_node.tok.str;
+			if (cur_node.type == 'num') cur_node.name = new String(cur_node.tok.str);
 			else if (cur_node.type == 'id') cur_node.name = cur_node.tok.str;
 			toks.shift();
 			continue;

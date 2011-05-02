@@ -3,6 +3,8 @@ var MOUSE_SPEED = 0.3;
 var texture_cache = {}
 
 function draw_create_cube(label, is_term, is_minor) {
+	label = new String(label);
+
 	var key = label+' '+is_term+' '+is_minor;
 
 	if (!(key in texture_cache)) {
@@ -17,7 +19,8 @@ function draw_create_cube(label, is_term, is_minor) {
 		ct.strokeRect(0, 0, canvas.width, canvas.height);
 
 		if (label.length <= 3) ct.font = '140px sans-serif';
-		else ct.font = '100px sans-serif';
+		else if (label.length <= 5) ct.font = '100px sans-serif';
+		else ct.font = '50px sans-serif';
 
 		ct.fillStyle = 'rgb(0,0,0)';
 		ct.textAlign = 'center';
