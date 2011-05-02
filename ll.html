@@ -150,9 +150,13 @@
 						var timer_id = -1;
 						return function(ev) {
 							if (timer_id != -1) clearTimeout(timer_id);
-							timer_id = setTimeout(function() {
+							if (ev.keyCode == 13) {
 								obj.onmouseup();
-							}, 1000);
+							} else {
+								timer_id = setTimeout(function() {
+									obj.onmouseup();
+								}, 1000);
+							}
 						};
 					}(input);
 
