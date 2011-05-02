@@ -70,6 +70,8 @@ if (Array.prototype.concat_uniq_except_nil === undefined) {
 first_cache = {};
 
 function ll_get_firsts(syms) {
+	if (typeof(syms) == 'string') syms = [syms];
+
 	if (syms in first_cache) return first_cache[syms];
 
 	var res = [];

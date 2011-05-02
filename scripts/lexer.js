@@ -70,7 +70,7 @@ function lexer_get_next_tok(handle) {
 					return tok;
 
 				} else if (ch == ')') {
-					tok.type = '(';//'par_2';
+					tok.type = ')';//'par_2';
 					return tok;
 
 				} else if (ch == '{') {
@@ -141,7 +141,7 @@ function lexer_get_next_tok(handle) {
 					return tok;
 
 				} else if (ch == ':') {
-					tok.type = ';';//'colon';
+					tok.type = ':';//'colon';
 					return tok;
 
 				} else if (ch == '.') {

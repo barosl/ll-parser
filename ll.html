@@ -97,7 +97,7 @@
 			}
 
 			function handle_text(text) {
-				var lines = text.split('\n');
+				var lines = text.strip().split('\n');
 
 				var i = 0;
 				while (i < lines.length) {
@@ -223,7 +223,7 @@
 
 //			var default_rules = "E -> T E'\nE' -> + T E' | nil\nT -> F T'\nT' -> * F T' | nil\nF -> ( E ) | id";
 			var default_rules = "E -> T E'\nE' -> + T E'\nE' -> - T E'\nE' -> nil\nT -> F T'\nT' -> * F T'\nT' -> / F T'\nT' -> nil\nF -> ( E )\nF -> id\nF -> num";
-			var default_text = 'abc+123+456\n1+1\na+b+c+1+2+3+d+e+f+4+5+6';
+			var default_text = 'abc+123\ndef+(456+ghi)\na+b+c+1+2+3+d+e+f+4+5+6';
 
 			function on_load() {
 				document.getElementById('text').value = default_rules;
