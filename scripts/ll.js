@@ -27,6 +27,8 @@ function ll_create_table(text) {
 }
 */
 
+var NIL = 'nil';
+
 if (String.prototype.strip === undefined) {
 	String.prototype.strip = function() {
 		return String(this).replace(/^\s+|\s+$/g, '');
@@ -58,7 +60,7 @@ if (Array.prototype.concat_uniq_except_nil === undefined) {
 
 		for (var i=0;i<other.length;i++) {
 			var val = other[i];
-			if (!(val in vals) && val != 'nil') res.push(val);
+			if (!(val in vals) && val != NIL) res.push(val);
 		}
 
 		return res;
@@ -93,7 +95,7 @@ function ll_get_firsts(syms) {
 			for (var k=0;k<firsts.length;k++) {
 				var first = firsts[k];
 
-				if (first == 'nil') found = true;
+				if (first == NIL) found = true;
 				else res.push(first);
 			}
 
@@ -101,7 +103,7 @@ function ll_get_firsts(syms) {
 		}
 
 		if (found) {
-			res.push('nil');
+			res.push(NIL);
 		}
 	}
 
@@ -139,7 +141,7 @@ function ll_calc_follows() {
 							follow_cache[sym] = follow_cache[sym].concat_uniq_except_nil(firsts);
 						}
 
-						if (j == syms.length-1 || firsts.indexOf('nil') != -1) {
+						if (j == syms.length-1 || firsts.indexOf(NIL) != -1) {
 							follow_cache[sym] = follow_cache[sym].concat_uniq(follow_cache[non_term]);
 						}
 					}
@@ -199,14 +201,14 @@ function ll_create_table(text) {
 
 				for (var j=0;j<terms.length;j++) {
 					var term = terms[j];
-					if (term != 'nil') ll_table[non_term+'\0'+(term=='eos'?'':term)] = syms[0] == 'nil' ? [] : syms; /* FIXME */
+					if (term != NIL) ll_table[non_term+'\0'+(term=='eos'?'':term)] = syms[0] == NIL ? [] : syms; /* FIXME */
 				}
 
-				if (terms.indexOf('nil') != -1) {
+				if (terms.indexOf(NIL) != -1) {
 					var terms = follow_cache[non_term];
 					for (var j=0;j<terms.length;j++) {
 						var term = terms[j];
-						ll_table[non_term+'\0'+(term=='eos'?'':term)] = syms[0] == 'nil' ? [] : syms;
+						ll_table[non_term+'\0'+(term=='eos'?'':term)] = syms[0] == NIL ? [] : syms;
 					}
 				}
 			}
@@ -275,7 +277,7 @@ function ll_parse(toks) {
 		childs.reverse();
 
 		if (!childs.length) {
-			childs = [{type: 'nil', name: 'nil', childs: []}]
+			childs = [{type: NIL, name: 'nil', childs: []}]
 		}
 
 		cur_node.childs = childs;

@@ -3,7 +3,9 @@ var MOUSE_SPEED = 0.3;
 var texture_cache = {}
 
 function draw_create_cube(label, is_term, is_minor) {
-	if (!(label in texture_cache)) {
+	var key = label+' '+is_term+' '+is_minor;
+
+	if (!(key in texture_cache)) {
 		var canvas = document.createElement('canvas');
 		canvas.width = 256;
 		canvas.height = 256;
@@ -22,10 +24,10 @@ function draw_create_cube(label, is_term, is_minor) {
 		ct.textBaseline = 'middle';
 		ct.fillText(label, canvas.width/2, canvas.height/2);
 
-		texture_cache[label] = new THREE.Texture(canvas);
+		texture_cache[key] = new THREE.Texture(canvas);
 	}
 
-	return new THREE.Mesh(new THREE.Cube(256, 256, 256), new THREE.MeshBasicMaterial({map: texture_cache[label]}));
+	return new THREE.Mesh(new THREE.Cube(256, 256, 256), new THREE.MeshBasicMaterial({map: texture_cache[key]}));
 }
 
 var camera = new THREE.Camera(45, 1.0, 1, 100000);
@@ -223,7 +225,7 @@ function draw_tree(tree) {
 			idx = 0;
 		}
 
-		var cube = draw_create_cube(node.name, node.childs.length ? false : true, node.type == 'nil');
+		var cube = draw_create_cube(node.name, node.childs.length ? false : true, node.type == NIL);
 		cube.position.x = 500*(idx - nodes_per_level[node.level]/2);
 		cube.position.y = -500*node.level;
 		scene.addObject(cube);
